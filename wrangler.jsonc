@@ -4,6 +4,9 @@
   "main": "src/server.ts",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "vars": {
+    "OPENSEO_TELEMETRY_DISABLED": "1",
+  },
   "observability": {
     "enabled": true,
     // Spans are billed as observability events (free tier 200k/day); add a
@@ -73,18 +76,18 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "4abd52f3f2c549ac83cc2cb4ceec8620",
+      "id": "3534491e4dd949c9a10c4a8ceab16357",
     },
     {
       "binding": "OAUTH_KV",
-      "id": "bd1759494309474a9b423b029967b0db",
+      "id": "530737fa75204571bb80c282d0b211d8",
     },
   ],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "open-seo",
-      "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
+      "database_name": "open-seo-hf",
+      "database_id": "1e21e58b-326a-41d8-b01f-a4be2cc7c92d",
       "migrations_dir": "drizzle",
     },
   ],
@@ -107,7 +110,7 @@
   // ],
   "r2_buckets": [
     {
-      "bucket_name": "open-seo",
+      "bucket_name": "open-seo-hf",
       "binding": "R2",
     },
   ],
