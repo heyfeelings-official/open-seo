@@ -30,7 +30,7 @@ function buildTool(outputs: unknown[]) {
   return { tool, execute };
 }
 
-const callOptions = { toolCallId: "t", messages: [] };
+const callOptions = { toolCallId: "t", messages: [], context: {} };
 
 afterEach(() => {
   vi.useRealTimers();

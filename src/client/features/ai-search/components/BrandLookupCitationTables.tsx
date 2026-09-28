@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { createColumnHelper, type Table } from "@tanstack/react-table";
+import {
+  createColumnHelper,
+  type RowData,
+  type Table,
+} from "@/client/components/table/reactTable";
 import { Link } from "@tanstack/react-router";
 import { ExternalLink, Sparkles } from "lucide-react";
 import { AppDataTable } from "@/client/components/table/AppDataTable";
@@ -246,7 +250,7 @@ export function buildTopPagesColumns({
       cell: ({ getValue }) => (
         <span className="tabular-nums">{formatCount(getValue())}</span>
       ),
-      sortingFn: numericNullsLast,
+      sortFn: numericNullsLast,
       sortDescFirst: true,
     }),
   ];
@@ -307,7 +311,7 @@ export function buildTopQueriesColumns({
       cell: ({ getValue }) => (
         <span className="tabular-nums">{formatCount(getValue())}</span>
       ),
-      sortingFn: numericNullsLast,
+      sortFn: numericNullsLast,
       sortDescFirst: true,
     }),
     queriesHelper.display({
@@ -370,7 +374,7 @@ export function TopQueriesTable({
   return <BrandLookupTable table={table} urlLikeColumnId="question" />;
 }
 
-function BrandLookupTable<T>({
+function BrandLookupTable<T extends RowData>({
   table,
   urlLikeColumnId,
 }: {

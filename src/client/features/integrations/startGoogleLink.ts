@@ -77,10 +77,11 @@ export async function startGoogleLink(
       const res = await config.startSelfHosted({ data: { callbackURL } });
       url = res.url;
     } else {
-      const res = await authClient.oauth2.link({
-        providerId: config.providerId,
+      const res = await authClient.linkSocial({
+        provider: config.providerId,
         callbackURL,
         errorCallbackURL: withGoogleLinkErrorParam(callbackURL, provider),
+        disableRedirect: true,
       });
       if (res.error) {
         toast.error(res.error.message ?? "Could not start Google sign-in");

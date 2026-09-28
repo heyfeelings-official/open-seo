@@ -1,4 +1,4 @@
-import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import { createColumnHelper } from "@/client/components/table/reactTable";
 import type { MutableRefObject } from "react";
 import { makeSelectionColumn } from "@/client/components/table/AppDataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
@@ -42,7 +42,7 @@ const dimensionHelper = createColumnHelper<DimensionRow>();
 
 export function buildDimensionColumns(
   keyLabel: string,
-): ColumnDef<DimensionRow>[] {
+) {
   return [
     dimensionHelper.accessor("key", {
       enableSorting: false,
@@ -88,7 +88,7 @@ const strikingHelper = createColumnHelper<StrikingRow>();
 
 export function buildStrikingColumns(
   anchorRef: MutableRefObject<SelectionAnchor | null>,
-): ColumnDef<StrikingRow>[] {
+) {
   return [
     makeSelectionColumn<StrikingRow>(anchorRef),
     strikingHelper.accessor("query", {

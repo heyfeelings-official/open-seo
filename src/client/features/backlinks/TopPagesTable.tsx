@@ -1,5 +1,5 @@
-import { createColumnHelper } from "@tanstack/react-table";
-import type { OnChangeFn, SortingState } from "@tanstack/react-table";
+import { createColumnHelper } from "@/client/components/table/reactTable";
+import type { OnChangeFn, SortingState } from "@/client/components/table/reactTable";
 import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import {
   AppDataTable,

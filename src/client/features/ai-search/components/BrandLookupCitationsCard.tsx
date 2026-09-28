@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { type SortingState } from "@tanstack/react-table";
+import { type SortingState } from "@/client/components/table/reactTable";
 import { ChevronDown, Download, Sheet, SlidersHorizontal } from "lucide-react";
 import { useAppTable } from "@/client/components/table/AppDataTable";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";

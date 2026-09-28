@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import {
   createColumnHelper,
-  type ColumnDef,
   type SortingState,
-} from "@tanstack/react-table";
+} from "@/client/components/table/reactTable";
 import { Link } from "@tanstack/react-router";
 import {
   AppDataTable,
@@ -119,14 +118,14 @@ function buildPerformanceColumns({
 }: {
   auditId: string;
   projectId: string;
-}): ColumnDef<PerformanceRowData>[] {
+}) {
   return [
     performanceColumnHelper.accessor("pagePath", {
       header: ({ column }) => <SortableHeader column={column} label="URL" />,
       cell: ({ getValue }) => (
         <span className="text-xs">{getValue() ?? "-"}</span>
       ),
-      sortingFn: nullableStringSort,
+      sortFn: nullableStringSort,
       meta: { cellClassName: "max-w-[180px] truncate" },
     }),
     performanceColumnHelper.accessor("strategy", {
@@ -154,24 +153,24 @@ function buildPerformanceColumns({
         );
       },
       enableSorting: true,
-      sortingFn: (left, right) =>
+      sortFn: (left, right) =>
         Number(isLighthouseFailure(left.original)) -
         Number(isLighthouseFailure(right.original)),
     }),
     performanceColumnHelper.accessor("performanceScore", {
       header: ({ column }) => <SortableHeader column={column} label="Perf" />,
       cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
-      sortingFn: nullableNumberSort,
+      sortFn: nullableNumberSort,
     }),
     performanceColumnHelper.accessor("accessibilityScore", {
       header: ({ column }) => <SortableHeader column={column} label="A11y" />,
       cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
-      sortingFn: nullableNumberSort,
+      sortFn: nullableNumberSort,
     }),
     performanceColumnHelper.accessor("seoScore", {
       header: ({ column }) => <SortableHeader column={column} label="SEO" />,
       cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
-      sortingFn: nullableNumberSort,
+      sortFn: nullableNumberSort,
     }),
     performanceColumnHelper.accessor("lcpMs", {
       header: ({ column }) => <SortableHeader column={column} label="LCP" />,
@@ -183,7 +182,7 @@ function buildPerformanceColumns({
           <span className="text-xs text-base-content/40">-</span>
         );
       },
-      sortingFn: nullableNumberSort,
+      sortFn: nullableNumberSort,
     }),
     performanceColumnHelper.accessor("cls", {
       header: ({ column }) => <SortableHeader column={column} label="CLS" />,
@@ -195,7 +194,7 @@ function buildPerformanceColumns({
           <span className="text-xs text-base-content/40">-</span>
         );
       },
-      sortingFn: nullableNumberSort,
+      sortFn: nullableNumberSort,
     }),
     performanceColumnHelper.accessor("inpMs", {
       header: ({ column }) => <SortableHeader column={column} label="INP" />,
@@ -207,7 +206,7 @@ function buildPerformanceColumns({
           <span className="text-xs text-base-content/40">-</span>
         );
       },
-      sortingFn: nullableNumberSort,
+      sortFn: nullableNumberSort,
     }),
     performanceColumnHelper.accessor("ttfbMs", {
       header: ({ column }) => <SortableHeader column={column} label="TTFB" />,
@@ -219,7 +218,7 @@ function buildPerformanceColumns({
           <span className="text-xs text-base-content/40">-</span>
         );
       },
-      sortingFn: nullableNumberSort,
+      sortFn: nullableNumberSort,
     }),
     performanceColumnHelper.display({
       id: "issues",

@@ -1,10 +1,9 @@
 import {
   createColumnHelper,
-  type ColumnDef,
   type OnChangeFn,
   type RowSelectionState,
   type SortingState,
-} from "@tanstack/react-table";
+} from "@/client/components/table/reactTable";
 import { Search } from "lucide-react";
 import { useMemo } from "react";
 import {
@@ -43,7 +42,7 @@ export function SavedKeywordsTable({
   onSortingChange: OnChangeFn<SortingState>;
 }) {
   const selectAnchorRef = useSelectionAnchor();
-  const columns = useMemo<ColumnDef<SavedKeywordRow>[]>(
+  const columns = useMemo(
     () => [
       makeSelectionColumn<SavedKeywordRow>(selectAnchorRef),
       columnHelper.accessor("keyword", {

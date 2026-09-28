@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MutableRefObject } from "react";
-import type { RowSelectionState, Updater } from "@tanstack/react-table";
+import type { RowSelectionState, Updater } from "@/client/components/table/reactTable";
 import {
   applyShiftRangeSelection,
   type SelectionAnchor,
@@ -31,8 +31,8 @@ function makeTable(ids: string[], selectedIds: Set<string>) {
       rows: ids.map((id) => makeRow(id, selectedIds)),
     }),
     setRowSelection: (updater: Updater<RowSelectionState>) => {
-      const currentSelection = Object.fromEntries(
-        Array.from(selectedIds).map((id) => [id, true]),
+      const currentSelection: RowSelectionState = Object.fromEntries(
+        Array.from(selectedIds).map((id) => [id, true as const]),
       );
       const nextSelection =
         typeof updater === "function" ? updater(currentSelection) : updater;

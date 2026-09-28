@@ -1,20 +1,25 @@
 import type { MouseEvent, MutableRefObject } from "react";
-import type { Row, RowSelectionState, Table } from "@tanstack/react-table";
+import type {
+  Row,
+  RowData,
+  RowSelectionState,
+  Table,
+} from "@/client/components/table/reactTable";
 
 export type SelectionAnchor = {
   id: string;
   selected: boolean;
 };
 
-type SelectionRow<T> = Pick<Row<T>, "id" | "getIsSelected">;
+type SelectionRow<T extends RowData> = Pick<Row<T>, "id" | "getIsSelected">;
 
-type SelectionTable<T> = Pick<Table<T>, "setRowSelection"> & {
+type SelectionTable<T extends RowData> = Pick<Table<T>, "setRowSelection"> & {
   getRowModel: () => {
     rows: SelectionRow<T>[];
   };
 };
 
-export function applyShiftRangeSelection<T>(
+export function applyShiftRangeSelection<T extends RowData>(
   event: Pick<MouseEvent<HTMLElement>, "shiftKey" | "preventDefault">,
   row: SelectionRow<T>,
   table: SelectionTable<T>,

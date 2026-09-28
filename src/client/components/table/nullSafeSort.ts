@@ -1,4 +1,4 @@
-import type { Row } from "@tanstack/react-table";
+import type { Row, RowData } from "@/client/components/table/reactTable";
 
 /**
  * Null/undefined-aware sorting functions that keep blank rows at the bottom
@@ -7,7 +7,10 @@ import type { Row } from "@tanstack/react-table";
  * direction from the cell context and return a value that survives the flip.
  */
 
-function isDescending<TData>(row: Row<TData>, columnId: string): boolean {
+function isDescending<TData extends RowData>(
+  row: Row<TData>,
+  columnId: string,
+): boolean {
   const cell = row.getAllCells().find((c) => c.column.id === columnId);
   return cell?.column.getIsSorted() === "desc";
 }
@@ -29,7 +32,7 @@ function compareNumericNullsLast(
   return a - b;
 }
 
-export function numericNullsLast<TData>(
+export function numericNullsLast<TData extends RowData>(
   rowA: Row<TData>,
   rowB: Row<TData>,
   columnId: string,

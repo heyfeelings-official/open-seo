@@ -125,6 +125,8 @@ function tokenExchangeOptions(
   return {
     grantType: GrantType.REFRESH_TOKEN,
     clientId: "client-1",
+    subjectClientId: "client-1",
+    resource: "https://app.openseo.so/mcp",
     userId: "user-1",
     grantId: "grant-1",
     scope: ["offline_access", "mcp"],

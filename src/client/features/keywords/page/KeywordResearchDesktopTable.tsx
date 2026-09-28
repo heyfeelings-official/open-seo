@@ -1,9 +1,8 @@
 import { useMemo } from "react";
 import {
   createColumnHelper,
-  type ColumnDef,
   type RowSelectionState,
-} from "@tanstack/react-table";
+} from "@/client/components/table/reactTable";
 import {
   AppDataTable,
   makeSelectionColumn,
@@ -56,7 +55,7 @@ export function KeywordResearchDesktopTable({
       ) as RowSelectionState,
     [selectedRows],
   );
-  const columns = useMemo<ColumnDef<KeywordResearchRow>[]>(
+  const columns = useMemo(
     () => [
       makeSelectionColumn<KeywordResearchRow>(selectAnchorRef),
       keywordColumnHelper.accessor("keyword", {

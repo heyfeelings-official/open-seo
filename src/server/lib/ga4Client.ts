@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- one client module per Google integration (gscClient precedent); GA4 spans the Admin and Data APIs */
 import { z } from "zod";
-import { getAuth } from "@/lib/auth";
+import { getStoredProviderAccessToken } from "@/server/lib/providerAccessToken";
 import {
   Ga4AdminApiError,
   Ga4DataApiError,
@@ -130,12 +130,10 @@ async function getGa4AccessToken(opts: {
 }): Promise<string> {
   let result: { accessToken?: string } | undefined;
   try {
-    result = await getAuth().api.getAccessToken({
-      body: {
-        providerId: GA4_OAUTH_PROVIDER_ID,
-        userId: opts.userId,
-        accountId: opts.ga4AccountId,
-      },
+    result = await getStoredProviderAccessToken({
+      userId: opts.userId,
+      providerId: GA4_OAUTH_PROVIDER_ID,
+      providerAccountId: opts.ga4AccountId,
     });
   } catch (error) {
     throw new Ga4TokenError(

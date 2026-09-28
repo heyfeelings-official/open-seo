@@ -5,8 +5,22 @@ const mocks = vi.hoisted(() => ({
   fetch: vi.fn<typeof fetch>(),
 }));
 
+vi.mock("cloudflare:workers", () => ({ env: {} }));
+
 vi.mock("@/lib/auth", () => ({
   getAuth: () => ({ api: { getAccessToken: mocks.getAccessToken } }),
+}));
+
+vi.mock("@/db", () => ({
+  db: {
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([{ id: "auth-account-row" }]),
+        }),
+      }),
+    }),
+  },
 }));
 
 function jsonResponse(body: unknown, status = 200) {
@@ -50,21 +64,20 @@ describe("gscClient", () => {
 
     expect(mocks.getAccessToken).toHaveBeenCalledWith({
       body: {
-        providerId: "google-search-console",
+        accountId: "auth-account-row",
         userId: "u1",
-        accountId: "google-sub-a",
       },
     });
   });
 
-  it("omits accountId for the legacy null-account fallback", async () => {
+  it("mints a token from the only stored grant when no Google subject is selected", async () => {
     mocks.fetch.mockResolvedValue(jsonResponse({ siteEntry: [] }));
     const { createGscClient } = await import("./gscClient");
 
     await createGscClient({ userId: "u1" }).listSites();
 
     expect(mocks.getAccessToken).toHaveBeenCalledWith({
-      body: { providerId: "google-search-console", userId: "u1" },
+      body: { accountId: "auth-account-row", userId: "u1" },
     });
   });
 

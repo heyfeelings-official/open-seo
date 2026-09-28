@@ -12,7 +12,7 @@ import type {
   OnChangeFn,
   RowSelectionState,
   SortingState,
-} from "@tanstack/react-table";
+} from "@/client/components/table/reactTable";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { SavedKeywordsBulkActionBar } from "@/client/features/saved-keywords/SavedKeywordsBulkActionBar";

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import type { SortingState, Updater } from "@tanstack/react-table";
+import type { SortingState, Updater } from "@/client/components/table/reactTable";
 import { BacklinksSearchCard } from "./BacklinksSearchCard";
 import { BacklinksBody } from "./BacklinksPageContent";
 import type { BacklinksPageProps } from "./backlinksPageTypes";

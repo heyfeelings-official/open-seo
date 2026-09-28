@@ -1,4 +1,4 @@
-import { getAuth } from "@/lib/auth";
+import { getStoredProviderAccessToken } from "@/server/lib/providerAccessToken";
 import type { SamChatAgent } from "@/server/features/sam/SamChatAgent";
 import { captureServerError } from "@/server/lib/posthog";
 import {
@@ -141,12 +141,10 @@ async function revokeGoogleAccount(
 ): Promise<GoogleRevocationResult> {
   let accessToken: string | undefined;
   try {
-    const result = await getAuth().api.getAccessToken({
-      body: {
-        userId,
-        providerId: account.providerId,
-        accountId: account.accountId,
-      },
+    const result = await getStoredProviderAccessToken({
+      userId,
+      providerId: account.providerId,
+      providerAccountId: account.accountId,
     });
     accessToken = result?.accessToken;
   } catch {

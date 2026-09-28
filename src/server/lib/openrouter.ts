@@ -1,6 +1,6 @@
 import {
   createOpenRouter,
-  type LanguageModelV3,
+  type LanguageModelV4,
 } from "@openrouter/ai-sdk-provider";
 
 // OpenRouter model slug used for the SAM in-app chat agent. Override with
@@ -30,7 +30,7 @@ export function buildChatAgentModel(
   apiKey: string,
   modelId?: string,
   reasoningEffort: "max" | "low" = "max",
-): LanguageModelV3 {
+): LanguageModelV4 {
   const model = modelId ?? DEFAULT_CHAT_AGENT_MODEL;
   const openrouter = createOpenRouter({ apiKey });
 

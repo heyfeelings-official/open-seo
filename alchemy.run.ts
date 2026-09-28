@@ -90,8 +90,7 @@ const makeResources = (stage: string) => {
       name: prod ? PROD_NAMES.d1 : `open-seo-db-${stage}`,
       // drizzle-generated SQL migrations; tracked in the same
       // wrangler-compatible table prod already uses.
-      migrationsDir: "drizzle",
-      migrationsTable: "d1_migrations",
+      migrations: { dir: "drizzle", table: "d1_migrations" },
     }).pipe(keep),
     R2: Cloudflare.R2.Bucket("R2", {
       name: prod ? PROD_NAMES.r2 : `open-seo-r2-${stage}`,
@@ -368,12 +367,12 @@ export default Alchemy.Stack(
     // Its memory spikes (multi-MB Lighthouse payloads, in-flight HTML
     // batches) OOMed the app worker's near-limit baseline heap. Deployed
     // BEFORE the app worker so the app's cross-script workflow/DO bindings
-    // always have a target. Takes no direct traffic (url off).
+    // always have a target. Takes no direct traffic (workers.dev off).
     const auditWorker = yield* Cloudflare.Worker("open-seo-audit", {
       name: `${workerName(stage)}-audit`,
       main: "./dist/open_seo_audit/index.js",
       bundle: false,
-      url: false,
+      workersDev: false,
       compatibility: {
         date: wrangler.compatibility_date,
         flags: wrangler.compatibility_flags,
@@ -423,7 +422,9 @@ export default Alchemy.Stack(
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),
       // Prod serves the real domains; the zone is inferred from the hostname.
-      domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
+      domain: prod
+        ? { name: "app.openseo.so", aliases: ["www.app.openseo.so"] }
+        : undefined,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by
       // src/server.ts), which `bundle: false` requires. Sibling chunks under

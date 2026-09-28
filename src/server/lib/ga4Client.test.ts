@@ -12,8 +12,22 @@ const mocks = vi.hoisted(() => ({
   fetch: vi.fn<typeof fetch>(),
 }));
 
+vi.mock("cloudflare:workers", () => ({ env: {} }));
+
 vi.mock("@/lib/auth", () => ({
   getAuth: () => ({ api: { getAccessToken: mocks.getAccessToken } }),
+}));
+
+vi.mock("@/db", () => ({
+  db: {
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([{ id: "auth-account-row" }]),
+        }),
+      }),
+    }),
+  },
 }));
 
 function jsonResponse(body: unknown, status = 200) {
@@ -82,9 +96,8 @@ describe("ga4Client admin API", () => {
     ]);
     expect(mocks.getAccessToken).toHaveBeenCalledWith({
       body: {
-        providerId: "google-analytics",
+        accountId: "auth-account-row",
         userId: "u1",
-        accountId: "google-sub-a",
       },
     });
     const secondUrl = mocks.fetch.mock.calls[1]?.[0];
@@ -286,9 +299,8 @@ describe("ga4Client data API", () => {
     expect(result.rowCount).toBe(1);
     expect(mocks.getAccessToken).toHaveBeenCalledWith({
       body: {
-        providerId: "google-analytics",
+        accountId: "auth-account-row",
         userId: "user_1",
-        accountId: "account_1",
       },
     });
     expect(mocks.fetch).toHaveBeenCalledWith(

@@ -66,10 +66,8 @@ export class SamTurnStats {
     const latencySeconds = (now - this.lastStepEndedAt) / 1000;
     this.lastStepEndedAt = now;
     const { usage } = ctx;
-    const reasoning =
-      usage.outputTokenDetails.reasoningTokens ?? usage.reasoningTokens ?? 0;
-    const cached =
-      usage.inputTokenDetails.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
+    const reasoning = usage.outputTokenDetails.reasoningTokens ?? 0;
+    const cached = usage.inputTokenDetails.cacheReadTokens ?? 0;
     this.model = ctx.response.modelId;
     this.steps += 1;
     this.inputTokens += usage.inputTokens ?? 0;

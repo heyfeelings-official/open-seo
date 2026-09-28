@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import { createColumnHelper } from "@/client/components/table/reactTable";
 import {
   AppDataTable,
   useAppTable,
@@ -36,7 +36,7 @@ function DomainPagesTableComponent({
   onSortClick,
 }: Props) {
   const renderStarted = performance.now();
-  const columns = useMemo<ColumnDef<PageRow>[]>(
+  const columns = useMemo(
     () => [
       pageColumnHelper.display({
         id: "page",

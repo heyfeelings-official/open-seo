@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { SlidersHorizontal } from "lucide-react";
-import type { OnChangeFn, SortingState } from "@tanstack/react-table";
+import type { OnChangeFn, SortingState } from "@/client/components/table/reactTable";
 import { BacklinksFilterPanel } from "./BacklinksFilterPanel";
 import { BacklinksTable } from "./BacklinksTable";
 import { ReferringDomainsTable } from "./ReferringDomainsTable";

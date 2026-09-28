@@ -1,4 +1,4 @@
-import { getAuth } from "@/lib/auth";
+import { getStoredProviderAccessToken } from "@/server/lib/providerAccessToken";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 import { GscApiError, GscTokenError } from "./gscErrors";
 
@@ -87,16 +87,13 @@ export function createGscClient(opts: {
   async function getToken(): Promise<string> {
     let result: { accessToken?: string } | undefined;
     try {
-      // Headerless call: getAccessToken trusts body.userId when no request
-      // session is present, and auto-refreshes via the genericOAuth provider.
-      // Works in every auth mode — self-hosted builds the same Better Auth
-      // instance once BETTER_AUTH_SECRET is set.
-      result = await getAuth().api.getAccessToken({
-        body: {
-          providerId: GSC_OAUTH_PROVIDER_ID,
-          userId: opts.userId,
-          ...(opts.gscAccountId ? { accountId: opts.gscAccountId } : {}),
-        },
+      // Headerless call: Better Auth refreshes the stored grant when no
+      // request session is present. Works in every auth mode — self-hosted
+      // builds the same Better Auth instance once BETTER_AUTH_SECRET is set.
+      result = await getStoredProviderAccessToken({
+        userId: opts.userId,
+        providerId: GSC_OAUTH_PROVIDER_ID,
+        providerAccountId: opts.gscAccountId,
       });
     } catch (error) {
       throw new GscTokenError(

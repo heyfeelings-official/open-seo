@@ -1,6 +1,6 @@
 import { useMemo, type MutableRefObject } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@/client/components/table/reactTable";
 import { makeSelectionColumn } from "@/client/components/table/AppDataTable";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
 import { formatLocationLabel } from "@/shared/keyword-locations";
@@ -141,7 +141,7 @@ function makeKeywordColumn(
         )}
       </div>
     ),
-    sortingFn: "alphanumeric",
+    sortFn: "alphanumeric",
   };
 }
 

@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import {
   createColumnHelper,
-  type ColumnDef,
   type SortingState,
-} from "@tanstack/react-table";
+} from "@/client/components/table/reactTable";
 import { ExternalLink } from "lucide-react";
 import {
   AppDataTable,
@@ -89,7 +88,7 @@ function buildPagesColumns({
 }: {
   canonicalHost: string;
   missingTitlePageIds: Set<string>;
-}): ColumnDef<PageRow>[] {
+}) {
   return [
     pageColumnHelper.accessor("url", {
       header: ({ column }) => <SortableHeader column={column} label="URL" />,
@@ -112,7 +111,7 @@ function buildPagesColumns({
     pageColumnHelper.accessor("statusCode", {
       header: ({ column }) => <SortableHeader column={column} label="Status" />,
       cell: ({ getValue }) => <HttpStatusBadge code={getValue()} />,
-      sortingFn: nullableNumberSort,
+      sortFn: nullableNumberSort,
     }),
     pageColumnHelper.accessor("title", {
       header: ({ column }) => <SortableHeader column={column} label="Title" />,
@@ -137,7 +136,7 @@ function buildPagesColumns({
           <EmptyCell />
         );
       },
-      sortingFn: nullableStringSort,
+      sortFn: nullableStringSort,
       meta: { cellClassName: "max-w-[360px]" },
     }),
     pageColumnHelper.accessor("h1Count", {
@@ -164,7 +163,7 @@ function buildPagesColumns({
         );
       },
       enableSorting: true,
-      sortingFn: (left, right) =>
+      sortFn: (left, right) =>
         left.original.imagesMissingAlt - right.original.imagesMissingAlt ||
         left.original.imagesTotal - right.original.imagesTotal,
     }),
@@ -178,7 +177,7 @@ function buildPagesColumns({
           <EmptyCell />
         );
       },
-      sortingFn: nullableNumberSort,
+      sortFn: nullableNumberSort,
     }),
   ];
 }

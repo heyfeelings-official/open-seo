@@ -1,4 +1,4 @@
-import type { LanguageModelV3 } from "@openrouter/ai-sdk-provider";
+import type { LanguageModelV4 } from "@openrouter/ai-sdk-provider";
 import { subscribe } from "agents/observability";
 import { z } from "zod";
 
@@ -35,9 +35,9 @@ export function openRouterCostUsd(providerMetadata: unknown): number {
   return parsed.success ? parsed.data.openrouter.usage.cost : 0;
 }
 
-// The provider package re-exports only LanguageModelV3 itself, so the stream
+// The provider package re-exports only LanguageModelV4 itself, so the stream
 // shape is derived from the interface.
-type StreamResult = Awaited<ReturnType<LanguageModelV3["doStream"]>>;
+type StreamResult = Awaited<ReturnType<LanguageModelV4["doStream"]>>;
 
 // Nothing is generated, so every counter is zero and there is no provider
 // finish reason to report.
@@ -52,9 +52,9 @@ const FINISH_STOP = { unified: "stop", raw: undefined } as const;
 // persisted and rendered like any other assistant message — without ever
 // calling a provider: no request, no tokens, and no reasoning channel that
 // could leak a chain-of-thought instead of the reply.
-export function staticAssistantModel(text: string): LanguageModelV3 {
+export function staticAssistantModel(text: string): LanguageModelV4 {
   return {
-    specificationVersion: "v3",
+    specificationVersion: "v4",
     provider: "openseo",
     modelId: "static-assistant",
     supportedUrls: {},

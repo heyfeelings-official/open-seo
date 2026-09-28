@@ -1,9 +1,8 @@
 import { memo, useMemo } from "react";
 import {
   createColumnHelper,
-  type ColumnDef,
   type RowSelectionState,
-} from "@tanstack/react-table";
+} from "@/client/components/table/reactTable";
 import {
   AppDataTable,
   makeSelectionColumn,
@@ -53,7 +52,7 @@ function DomainKeywordsTableComponent({
       ) as RowSelectionState,
     [selectedKeywords],
   );
-  const columns = useMemo<ColumnDef<KeywordRow>[]>(
+  const columns = useMemo(
     () => [
       makeSelectionColumn<KeywordRow>(selectAnchorRef),
       keywordColumnHelper.accessor("keyword", {

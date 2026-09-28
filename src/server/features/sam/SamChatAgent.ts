@@ -12,7 +12,7 @@ import type {
   TurnContext,
 } from "@cloudflare/think";
 import { clearChatTerminal } from "agents/chat";
-import { createCompactFunction } from "agents/experimental/memory/utils";
+import { createCompactFunction } from "agents/sessions";
 import { generateText } from "ai";
 import type { UIMessage } from "ai";
 import { z } from "zod";
@@ -226,7 +226,7 @@ export class SamChatAgent extends Think {
       })
       .onCompaction(
         createCompactFunction({
-          summarize: (prompt) => this.summarizeForCompaction(prompt),
+          summarize: (prompt: string) => this.summarizeForCompaction(prompt),
         }),
       )
       .compactAfter(SAM_COMPACT_AFTER_TOKENS);

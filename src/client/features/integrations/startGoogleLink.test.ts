@@ -5,7 +5,7 @@ const { link, hosted, selfHosted } = vi.hoisted(() => ({
   hosted: vi.fn(() => true),
   selfHosted: vi.fn(),
 }));
-vi.mock("@/lib/auth-client", () => ({ authClient: { oauth2: { link } } }));
+vi.mock("@/lib/auth-client", () => ({ authClient: { linkSocial: link } }));
 vi.mock("@/lib/auth-mode", () => ({ isHostedClientAuthMode: hosted }));
 vi.mock("@/serverFunctions/gsc", () => ({
   startSelfHostedGscLink: selfHosted,

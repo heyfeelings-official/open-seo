@@ -4,7 +4,7 @@ import {
   type ColumnDef,
   type RowSelectionState,
   type SortingState,
-} from "@tanstack/react-table";
+} from "@/client/components/table/reactTable";
 import { Loader2, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { getDomainKeywordSuggestions } from "@/serverFunctions/domain";
@@ -46,7 +46,7 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
     cell: ({ getValue }) => (
       <span className="font-medium">{getValue<string>()}</span>
     ),
-    sortingFn: "alphanumeric",
+    sortFn: "alphanumeric",
   },
   {
     id: "position",
@@ -67,7 +67,7 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
         <span className="text-base-content/40">—</span>
       );
     },
-    sortingFn: (rowA, rowB) => {
+    sortFn: (rowA, rowB) => {
       const a = rowA.original.position ?? 999;
       const b = rowB.original.position ?? 999;
       return a - b;
@@ -92,7 +92,7 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
         <span className="text-base-content/40">—</span>
       );
     },
-    sortingFn: (rowA, rowB) => {
+    sortFn: (rowA, rowB) => {
       const a = rowA.original.searchVolume ?? 0;
       const b = rowB.original.searchVolume ?? 0;
       return a - b;
@@ -117,7 +117,7 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
         <span className="text-base-content/40">—</span>
       );
     },
-    sortingFn: (rowA, rowB) => {
+    sortFn: (rowA, rowB) => {
       const a = rowA.original.traffic ?? 0;
       const b = rowB.original.traffic ?? 0;
       return a - b;

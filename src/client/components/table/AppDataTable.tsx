@@ -8,9 +8,11 @@ import {
   type ColumnDef,
   type Header,
   type Row,
+  type RowData,
   type Table,
   type TableOptions,
-} from "@tanstack/react-table";
+} from "@/client/components/table/reactTable";
+import type { CellData, TableFeatures } from "@tanstack/react-table";
 import {
   useRef,
   type MouseEvent,
@@ -22,36 +24,53 @@ import {
   type SelectionAnchor,
 } from "./tableSelection";
 
-type AppColumnMeta<TData> = {
-  headerClassName?: string;
-  cellClassName?: string | ((row: Row<TData>) => string | undefined);
-};
+type AppCellClassName<TData extends RowData> = (
+  row: Row<TData>,
+) => string | undefined;
 
 declare module "@tanstack/react-table" {
-  interface ColumnMeta<TData, TValue> extends AppColumnMeta<TData> {
+  interface ColumnMeta<
+    TFeatures extends TableFeatures,
+    TData extends RowData,
+    TValue extends CellData = CellData,
+  > {
+    headerClassName?: string;
+    cellClassName?: string | AppCellClassName<TData>;
+    // Keeps TFeatures referenced so the augmentation matches the library signature.
+    readonly __features?: TFeatures;
     readonly __valueType?: TValue;
   }
 }
 
-type UseAppTableOptions<TData> = Omit<
+type UseAppTableOptions<TData extends RowData> = Omit<
   TableOptions<TData>,
-  "getCoreRowModel"
+  "getCoreRowModel" | "columns"
 > & {
+  // v9 column defs are invariant in the cell value type. Call sites keep
+  // the helper's inferred columns; this wrapper only needs the list.
+  columns: readonly unknown[];
   withSorting?: boolean;
   withExpanded?: boolean;
   withPagination?: boolean;
 };
 
-export function useAppTable<TData>(options: UseAppTableOptions<TData>) {
-  const { withSorting, withExpanded, withPagination, ...tableOptions } =
+export function useAppTable<TData extends RowData>(
+  options: UseAppTableOptions<TData>,
+) {
+  const { withSorting, withExpanded, withPagination, columns, ...tableOptions } =
     options;
   return useReactTable({
     ...tableOptions,
-    getCoreRowModel: getCoreRowModel(),
-    ...(withSorting ? { getSortedRowModel: getSortedRowModel() } : {}),
-    ...(withExpanded ? { getExpandedRowModel: getExpandedRowModel() } : {}),
+    // v9 column defs are invariant in the cell value type.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- helper columns are checked at their definition
+    columns: columns as TableOptions<TData>["columns"],
+    getCoreRowModel: getCoreRowModel<TData>(),
+    ...(withSorting ? { getSortedRowModel: getSortedRowModel<TData>() } : {}),
+    ...(withExpanded
+      ? { getExpandedRowModel: getExpandedRowModel<TData>() }
+      : {}),
     ...(withPagination
-      ? { getPaginationRowModel: getPaginationRowModel() }
+      ? { getPaginationRowModel: getPaginationRowModel<TData>() }
       : {}),
   });
 }
@@ -60,7 +79,7 @@ export function useSelectionAnchor(): MutableRefObject<SelectionAnchor | null> {
   return useRef<SelectionAnchor | null>(null);
 }
 
-export function makeSelectionColumn<TData>(
+export function makeSelectionColumn<TData extends RowData>(
   anchorRef: MutableRefObject<SelectionAnchor | null>,
 ): ColumnDef<TData> {
   return {
@@ -82,7 +101,7 @@ export function makeSelectionColumn<TData>(
   };
 }
 
-function SelectionCheckbox<TData>({
+function SelectionCheckbox<TData extends RowData>({
   row,
   table,
   anchorRef,
@@ -118,7 +137,7 @@ function SelectionCheckbox<TData>({
   );
 }
 
-export function AppDataTable<TData>({
+export function AppDataTable<TData extends RowData>({
   table,
   className = "table table-sm",
   wrapperClassName = "overflow-x-auto",
@@ -217,12 +236,12 @@ export function AppDataTable<TData>({
   );
 }
 
-function HeaderCell<TData>({
+function HeaderCell<TData extends RowData>({
   header,
   fixedLayout,
   stickyHeader,
 }: {
-  header: Header<TData, unknown>;
+  header: Header<TData>;
   fixedLayout?: boolean;
   stickyHeader?: boolean;
 }) {

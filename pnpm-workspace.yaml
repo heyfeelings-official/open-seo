@@ -32,6 +32,9 @@ minimumReleaseAgeExclude:
 # To prune once a parent catches up: delete the line, run `pnpm install`, and
 # keep it deleted if `pnpm audit` stays clean.
 overrides:
+  # better-auth 1.7.5 and @better-auth/api-key pull different @better-auth/utils
+  # versions, which duplicates @better-auth/core and breaks plugin inference.
+  "@better-auth/utils": "0.5.0"
   # GHSA-4x5r-pxfx-6jf8 — waiting on @tanstack/devtools-vite
   "@babel/core": "^7.29.6"
   # GHSA-3jxr-9vmj-r5cp, GHSA-mh99-v99m-4gvg, GHSA-rgw5-rvv9-x895 — waiting on just-bash

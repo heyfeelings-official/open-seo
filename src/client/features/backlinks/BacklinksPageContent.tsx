@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { OnChangeFn, SortingState } from "@tanstack/react-table";
+import type { OnChangeFn, SortingState } from "@/client/components/table/reactTable";
 import { BacklinksOverviewPanels } from "./BacklinksOverviewPanels";
 import { BacklinksResultsCard } from "./BacklinksPageSections";
 import {
