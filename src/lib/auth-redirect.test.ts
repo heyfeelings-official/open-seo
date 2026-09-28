@@ -6,6 +6,7 @@ import {
   getOAuthSignedQuery,
   getSignInHref,
   getVerifyEmailSearch,
+  isDocumentRoute,
   normalizeAuthRedirect,
 } from "./auth-redirect";
 
@@ -23,6 +24,21 @@ const oauthSearch = new URLSearchParams({
 }).toString();
 
 describe("auth redirect helpers", () => {
+  it("reloads report documents and public shares after sign-in", () => {
+    const share = `/s/${"a".repeat(32)}`;
+    for (const destination of [
+      "/r/report-id",
+      share,
+      `${share}/`,
+      `${share}?source=email#top`,
+      `${share}/raw`,
+    ]) {
+      expect(isDocumentRoute(destination)).toBe(true);
+    }
+    expect(isDocumentRoute("/projects")).toBe(false);
+    expect(isDocumentRoute("/sign-in")).toBe(false);
+  });
+
   it("defaults unsafe or missing redirects to the app root", () => {
     expect(normalizeAuthRedirect(undefined)).toBe("/");
     expect(normalizeAuthRedirect("https://evil.example/app")).toBe("/");
@@ -38,6 +54,11 @@ describe("auth redirect helpers", () => {
   it("rejects external and protocol-relative redirects", () => {
     expect(normalizeAuthRedirect("https://evil.test")).toBe("/");
     expect(normalizeAuthRedirect("//evil.test")).toBe("/");
+  });
+
+  it("rejects backslash redirects that URL parsers treat as slashes", () => {
+    expect(normalizeAuthRedirect("/\\evil.test")).toBe("/");
+    expect(normalizeAuthRedirect("/path\\..\\evil")).toBe("/");
   });
 
   it("builds sign-in links with the redirect query only when needed", () => {

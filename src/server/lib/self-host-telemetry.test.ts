@@ -1,12 +1,21 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SelfHostTelemetryDependencies } from "./self-host-telemetry";
 import {
   getCheckIntervalMs,
   getHeartbeatIntervalMs,
+  incrementSelfHostMcpToolCallCount,
 } from "./self-host-telemetry";
 
+const dbMocks = vi.hoisted(() => {
+  const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+  const insert = vi.fn(() => ({
+    values: vi.fn(() => ({ onConflictDoUpdate })),
+  }));
+  return { insert, onConflictDoUpdate };
+});
+
 vi.mock("cloudflare:workers", () => ({ env: {} }));
-vi.mock("@/db", () => ({ db: {} }));
+vi.mock("@/db", () => ({ db: { insert: dbMocks.insert } }));
 
 type StoredState = {
   installId: string;
@@ -62,6 +71,7 @@ function createHarness(
     isNonProductionBuild: () => false,
     claimHeartbeat,
     collectCounts: async () => emptyCounts,
+    collectSetupIssues: async () => [],
     sendHeartbeat,
     markHeartbeatSent,
     getDbBackend: () => "d1",
@@ -77,9 +87,12 @@ function createHarness(
   };
 }
 
-async function runHeartbeat(harness: ReturnType<typeof createHarness>) {
+async function runHeartbeat(
+  harness: ReturnType<typeof createHarness>,
+  pathname = "/",
+) {
   const { maybeSendSelfHostHeartbeat } = await import("./self-host-telemetry");
-  await maybeSendSelfHostHeartbeat({
+  await maybeSendSelfHostHeartbeat(pathname, {
     dependencies: harness.dependencies,
     skipMemoryThrottle: true,
   });
@@ -126,6 +139,56 @@ describe("maybeSendSelfHostHeartbeat", () => {
     vi.stubEnv("DO_NOT_TRACK", "");
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it.each(["local_noauth", "cloudflare_access"])(
+    "ignores health probes without consuming the heartbeat in %s mode",
+    async (authMode) => {
+      vi.stubEnv("AUTH_MODE", authMode);
+      const harness = createHarness();
+
+      await runHeartbeat(harness, "/api/health");
+      await runHeartbeat(harness, "/api/health/");
+
+      expect(harness.claimHeartbeat).not.toHaveBeenCalled();
+      expect(harness.sendHeartbeat).not.toHaveBeenCalled();
+
+      await runHeartbeat(harness, "/mcp");
+
+      expect(harness.sendHeartbeat).toHaveBeenCalledTimes(1);
+      expect(harness.sendHeartbeat.mock.calls[0]?.[1]).toMatchObject({
+        deployTarget: authMode === "local_noauth" ? "docker" : "cloudflare",
+      });
+    },
+  );
+
+  it.each([
+    { mode: "production", prod: true, sends: true },
+    { mode: "selfhost", prod: true, sends: true },
+    { mode: "preview", prod: true, sends: false },
+    { mode: "development", prod: false, sends: false },
+    { mode: "test", prod: false, sends: false },
+    { mode: "selfhost", prod: false, sends: false },
+    { mode: "production", prod: false, sends: false },
+  ])(
+    "gates heartbeats and MCP counters for mode=$mode, PROD=$prod",
+    async ({ mode, prod, sends }) => {
+      vi.stubEnv("MODE", mode);
+      vi.stubEnv("PROD", prod);
+      const harness = createHarness();
+      delete harness.dependencies.isNonProductionBuild;
+
+      await runHeartbeat(harness);
+      await incrementSelfHostMcpToolCallCount();
+
+      expect(harness.claimHeartbeat).toHaveBeenCalledTimes(sends ? 1 : 0);
+      expect(harness.sendHeartbeat).toHaveBeenCalledTimes(sends ? 1 : 0);
+      expect(dbMocks.onConflictDoUpdate).toHaveBeenCalledTimes(sends ? 1 : 0);
+    },
+  );
+
   it("does not send in hosted mode", async () => {
     vi.stubEnv("AUTH_MODE", "hosted");
     const harness = createHarness();
@@ -154,6 +217,27 @@ describe("maybeSendSelfHostHeartbeat", () => {
 
     expect(harness.claimHeartbeat).not.toHaveBeenCalled();
     expect(harness.sendHeartbeat).not.toHaveBeenCalled();
+  });
+
+  it('still sends when the disable flags are explicitly "0"/"false"', async () => {
+    vi.stubEnv("OPENSEO_TELEMETRY_DISABLED", "0");
+    vi.stubEnv("DO_NOT_TRACK", "false");
+    const harness = createHarness();
+
+    await runHeartbeat(harness);
+
+    expect(harness.sendHeartbeat).toHaveBeenCalledTimes(1);
+  });
+
+  it("includes the setup-issue summary in heartbeat properties", async () => {
+    const harness = createHarness();
+    harness.dependencies.collectSetupIssues = async () => ["dataforseo:error"];
+
+    await runHeartbeat(harness);
+
+    expect(harness.sendHeartbeat.mock.calls[0]?.[1]).toMatchObject({
+      setupIssues: ["dataforseo:error"],
+    });
   });
 
   it("does not send from non-production builds (dev, test, preview)", async () => {

@@ -1,11 +1,19 @@
-import {
-  normalizeObjectSchema,
-  safeParseAsync,
-} from "@modelcontextprotocol/sdk/server/zod-compat.js";
-import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import type { ToolExtra } from "@/server/mcp/context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
+import { Ajv } from "@modelcontextprotocol/client/validators/ajv";
+import { z } from "zod";
+import { AppError } from "@/server/lib/errors";
+import { objectSchema } from "@/server/mcp/output-schemas";
+import * as researchTools from "./dataforseo-research-tools";
+import * as localSeoTools from "./local-seo-tools";
+import { getBacklinksProfileTool } from "./get-backlinks-profile";
+import { getRankTrackerTool } from "./get-rank-tracker";
+import {
+  getProjectContextTool,
+  updateProjectContextTool,
+} from "./project-context";
+import { getSearchConsolePerformanceTool } from "./search-console-tools";
+import { runSiteAuditTool } from "./site-audit-tools";
+import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
@@ -14,6 +22,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("cloudflare:workers", () => ({
   env: {},
+  DurableObject: class {
+    readonly ctx = null;
+  },
 }));
 
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
@@ -41,32 +52,10 @@ class ProviderRow {
   ) {}
 }
 
-const authContext = {
-  userId: "user_123",
+const toolContext = makeToolContext({
   userEmail: "team@example.com",
-  organizationId: "org_123",
-  clientId: "client_123",
-  scopes: ["mcp"],
-  audience: "open-seo",
-  subject: "user_123",
   baseUrl: "https://app.example.com",
-};
-
-const authExtra: ToolExtra = {
-  signal: new AbortController().signal,
-  requestId: 1,
-  sendNotification: vi.fn(),
-  sendRequest: vi.fn(),
-  authInfo: {
-    token: "token",
-    clientId: "client_123",
-    scopes: ["mcp"],
-    resource: new URL("https://app.example.com/mcp"),
-    extra: {
-      [MCP_AUTH_CONTEXT_PROP]: authContext,
-    },
-  } satisfies AuthInfo,
-};
+});
 
 const backlinkPage = {
   rows: [
@@ -97,8 +86,6 @@ const backlinkPage = {
 };
 
 beforeEach(() => {
-  mocks.getProjectForOrganization.mockReset();
-  mocks.profileBacklinksPage.mockReset();
   mocks.getProjectForOrganization.mockResolvedValue({
     id: "project_123",
     locationCode: 2840,
@@ -114,36 +101,50 @@ describe("DataForSEO research tool output schemas", () => {
     ["search_local_businesses", "businesses"],
     ["get_google_business_questions", "questions"],
     ["get_ranked_keywords", "keywords"],
+    ["get_business_reviews", "reviews"],
+    ["get_business_updates", "updates"],
   ])(
     "%s accepts typed (non-plain-object) provider rows",
     async (toolName, field) => {
-      const tools = await import("./dataforseo-research-tools");
+      const tools = { ...researchTools, ...localSeoTools };
       const tool = Object.values(tools).find((t) => t.name === toolName);
       if (!tool) throw new Error(`tool ${toolName} not found`);
 
-      const schema = normalizeObjectSchema(tool.config.outputSchema);
-      if (!schema) throw new Error("output schema did not normalize");
+      const schema = objectSchema(tool.config.outputSchema);
 
       // Mirror the MCP server: validate structuredContent against the tool's
       // own output schema. Extra keys (e.g. get_ranked_keywords' totalCount)
       // are allowed by the passthrough schemas, so one payload covers all.
-      const result = await safeParseAsync(schema, {
+      const result = await schema.safeParseAsync({
         [field]: [new ProviderRow("example.com", 1)],
         totalCount: 1,
+        // Required by the queued business-data tools; ignored by the rest.
+        status: "completed",
+        taskId: "google:task-1",
       });
 
       expect(result.success).toBe(true);
     },
   );
 
-  it("get_backlinks_profile accepts a paginated backlinks profile payload", async () => {
-    const { getBacklinksProfileTool } = await import("./get-backlinks-profile");
-    const schema = normalizeObjectSchema(
-      getBacklinksProfileTool.config.outputSchema,
+  it("get_business_profile accepts a typed provider profile object", async () => {
+    const schema = objectSchema(
+      localSeoTools.getBusinessProfileTool.config.outputSchema,
     );
-    if (!schema) throw new Error("output schema did not normalize");
 
-    const result = await safeParseAsync(schema, {
+    const result = await schema.safeParseAsync({
+      profile: new ProviderRow("example.com", 1),
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("get_backlinks_profile accepts a paginated backlinks profile payload", async () => {
+    const schema = objectSchema(getBacklinksProfileTool.config.outputSchema);
+
+    const result = await schema.safeParseAsync({
+      target: "example.com",
+      scope: "domain",
       backlinks: backlinkPage,
       meta: {
         organizationId: "org_123",
@@ -156,10 +157,99 @@ describe("DataForSEO research tool output schemas", () => {
   });
 });
 
+describe("MCP output schemas with expected missing fields", () => {
+  // Google omits position for the discover and googleNews search types.
+  it("accepts Search Console rows without a position", async () => {
+    const schema = objectSchema(
+      getSearchConsolePerformanceTool.config.outputSchema,
+    );
+
+    const result = await schema.safeParseAsync({
+      ok: true,
+      rows: [{ clicks: 0, impressions: 1, ctr: 0 }],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  // Refusals (for example, audit capacity) never start an audit, so they
+  // have no id to report.
+  it("accepts a site-audit refusal without an audit id", async () => {
+    const schema = objectSchema(runSiteAuditTool.config.outputSchema);
+
+    const result = await schema.safeParseAsync({
+      meta: {
+        organizationId: "org_123",
+        projectId: "project_123",
+      },
+    });
+
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("MCP output compatibility across deployments", () => {
+  // Clients cache the JSON Schema from tools/list. Zod's safeParse alone
+  // misses this regression: it strips unknown fields, while its exported
+  // output schema rejects them unless the object allows additional fields.
+  const validator = new Ajv({ strict: false });
+
+  it.each([getProjectContextTool, updateProjectContextTool])(
+    "$name accepts new context fields while validating known fields",
+    (tool) => {
+      const validate = validator.compile(
+        z.toJSONSchema(objectSchema(tool.config.outputSchema), {
+          target: "draft-7",
+        }),
+      );
+      const context = {
+        sections: [],
+        missingSections: [],
+        customSections: [],
+        competitors: [],
+        keyPages: [],
+        researchLog: [],
+        reportTemplates: [],
+        futureContextField: [],
+      };
+
+      expect(validate(context)).toBe(true);
+      expect(validate({ ...context, sections: "invalid" })).toBe(false);
+      const { sections: _sections, ...missingSections } = context;
+      expect(validate(missingSections)).toBe(false);
+    },
+  );
+
+  it("get_rank_tracker accepts new run fields while validating known fields", () => {
+    const validate = validator.compile(
+      z.toJSONSchema(getRankTrackerTool.config.outputSchema, {
+        target: "draft-7",
+      }),
+    );
+    const run = {
+      id: "run_1",
+      lastCheckedAt: null,
+      completedAt: "2026-09-17T00:00:00.000Z",
+      status: "completed",
+      errorMessage: null,
+      futureRunField: 1,
+    };
+    const detail = { config: {}, results: { rows: [], run } };
+
+    expect(validate(detail)).toBe(true);
+    expect(validate({ configs: [] })).toBe(true);
+    expect(validate({ results: { rows: [], run: null } })).toBe(true);
+    expect(
+      validate({ results: { rows: [], run: { ...run, status: "invalid" } } }),
+    ).toBe(false);
+    const { completedAt: _completedAt, ...incompleteRun } = run;
+    expect(validate({ results: { rows: [], run: incompleteRun } })).toBe(false);
+  });
+});
+
 describe("get_backlinks_profile MCP tool", () => {
   it("returns paginated backlink rows and honors filters, sorting, and mode", async () => {
     mocks.profileBacklinksPage.mockResolvedValue(backlinkPage);
-    const { getBacklinksProfileTool } = await import("./get-backlinks-profile");
 
     const result = await getBacklinksProfileTool.handler(
       {
@@ -178,7 +268,7 @@ describe("get_backlinks_profile MCP tool", () => {
         mode: "as_is",
         hideSpam: false,
       },
-      authExtra,
+      toolContext,
     );
 
     expect(mocks.profileBacklinksPage).toHaveBeenCalledWith(
@@ -217,7 +307,6 @@ describe("get_backlinks_profile MCP tool", () => {
       page: 2,
     };
     mocks.profileBacklinksPage.mockResolvedValue(finalPage);
-    const { getBacklinksProfileTool } = await import("./get-backlinks-profile");
 
     const result = await getBacklinksProfileTool.handler(
       {
@@ -232,7 +321,7 @@ describe("get_backlinks_profile MCP tool", () => {
         mode: "one_per_domain",
         hideSpam: true,
       },
-      authExtra,
+      toolContext,
     );
 
     expect(result.structuredContent?.backlinks).toMatchObject({
@@ -244,13 +333,11 @@ describe("get_backlinks_profile MCP tool", () => {
   });
 
   it("preserves Backlinks API access and credit errors", async () => {
-    const { AppError } = await import("@/server/lib/errors");
     const error = new AppError(
       "BACKLINKS_BILLING_ISSUE",
       "The connected DataForSEO account has a billing or balance issue",
     );
     mocks.profileBacklinksPage.mockRejectedValue(error);
-    const { getBacklinksProfileTool } = await import("./get-backlinks-profile");
 
     await expect(
       getBacklinksProfileTool.handler(
@@ -266,7 +353,7 @@ describe("get_backlinks_profile MCP tool", () => {
           mode: "one_per_domain",
           hideSpam: true,
         },
-        authExtra,
+        toolContext,
       ),
     ).rejects.toMatchObject({
       code: "BACKLINKS_BILLING_ISSUE",
